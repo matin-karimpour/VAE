@@ -5,7 +5,6 @@ In this repository implemented customizable VAE model with PyTorch.
 
 
 ![VAE](https://github.com/matin-karimpour/VAE/blob/main/pics/vae.png "VAE")
-*Fig 1 sample of the induced voltages measured by the two sensors. signals (a) After the first preprocess (b) after the second
-preprocess. [resource](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)*
+*Fig 1 In variational autoencoders, the loss function is composed of a reconstruction term (that makes the encoding-decoding scheme efficient) and a regularisation term (that makes the latent space regular). [resource](https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73)*
 
 
