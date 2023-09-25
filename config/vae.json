@@ -1,0 +1,4 @@
+{"encoder": [50, 60, 20], 
+"latent_dims": 16,
+"activation": "relu",
+"features": ["user_id", "age", "gender"]}
