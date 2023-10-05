@@ -13,10 +13,16 @@ class VariationalAutoencoder(nn.Module):
 
         self.encoder_layers = [len(conf["features"]) ,*conf["encoder"]]
         self.activation = conf["activation"]
-        if self.activation == "tanh":
-                act = nn.Tanh()
-        elif self.activation == "relu":
+
+        if self.activation == "relu":
             act = nn.ReLU()
+        elif self.activation== "gelu":
+            act = nn.GELU()
+        elif self.activation== "tanh":
+            act = nn.Tanh()
+        elif self.activation== "selu":
+            act = nn.SELU()
+            
         #createing encoder
         encoder = []
         for i  in range(len(self.encoder_layers) - 1):
