@@ -3,15 +3,15 @@ import pandas as pd
 from typing import List
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
-
+from sklearn import preprocessing
 
 class CustomDataset(Dataset):
     def __init__(self, 
                 df:pd.DataFrame,
                 features:List, 
                 device:str):
-        
-        self.features = df[features].values
+        standardizer = preprocessing.StandardScaler()
+        self.features = standardizer.fit_transform(df[features].values)
         self.device = device
 
     def __len__(self) -> int:
@@ -33,7 +33,7 @@ def load_csv_dataset(path:str) -> pd.DataFrame:
 def get_train_test(df, 
                    features: List, 
                    device: str, 
-                   batch_size: int=64, 
+                   batch_size: int=1024, 
                    random_seed: int = 46):
                    
     train_data, test_data = train_test_split(df, 
@@ -81,4 +81,20 @@ def ml100k_dataset() -> pd.DataFrame:
 
     df = ratings_base.merge(user, left_on="user_id",right_index=True)
     df = df.merge(items, left_on="movie_id",right_on="movie id")
+    return df
+
+def load_wine_data(path):
+    # read in from csv
+    df = pd.read_csv(path, sep=',', header=None, names=['Wine', 'Alcohol','Malic.acid','Ash','Acl',
+                                                    'Mg', 'Phenols', 'Flavanoids','Nonflavanoid.phenols',
+                                                    'Proanth','Color.int','Hue', 'OD','Proline'])
+    # replace nan with -99
+    df = df.fillna(-99)
+    df_base = df.iloc[:, 1:]
+    # get wine Label
+    df_wine = df.iloc[:,0].values
+    x = df_base.values.reshape(-1, df_base.shape[1]).astype('float32')
+    # stadardize values
+    standardizer = preprocessing.StandardScaler()
+    x = standardizer.fit_transform(x)    
     return df

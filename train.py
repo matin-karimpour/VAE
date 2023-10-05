@@ -20,9 +20,8 @@ def init_model(conf:Dict, device: str):
 
 
 
-def train(dataloader, model, optimizer):
+def train(dataloader, model, optimizer,loss_fn):
     size = len(dataloader.dataset)
-    print(size)
     model.train()
     losses = []
     for batch, x in enumerate(dataloader):
@@ -30,7 +29,7 @@ def train(dataloader, model, optimizer):
         # Compute prediction error
         pred, _ = model(x)
         
-        loss = ((x - pred)**2).sum() + model.kl
+        loss = loss_fn(x, pred) + model.kl
         losses.append(loss.item())
         # Backpropagation
         loss.backward()
@@ -39,13 +38,13 @@ def train(dataloader, model, optimizer):
 
         if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(x)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+            print(f"loss: {sum(losses)/len(losses):>7f}  [{current:>5d}/{size:>5d}]")
 
         
 
 
 
-def test(dataloader, model,):
+def test(dataloader, model,loss_fn):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
@@ -53,7 +52,7 @@ def test(dataloader, model,):
     with torch.no_grad():
         for X in dataloader:
             pred, _ = model(X)
-            test_loss += (((X - pred)**2).sum() + model.kl).item()
+            test_loss += (loss_fn(X, pred) + model.kl).item()
     test_loss /= num_batches
     print(f"Test Error: \n , Avg loss: {test_loss:>8f} \n")
     return test_loss
@@ -78,19 +77,26 @@ def fit(model,
         test_dataloader, 
         epochs: int=5, 
         model_save_path: str="best_model.bin",
-        patience: int = 10,
-        ):
+        patience: int = 1500,
+        lr=1e-3,
+        optimizer='adam',):
     
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    loss_fn = nn.MSELoss(reduction="sum")
+
+    if optimizer=='adam':
+        optimizer_fn = torch.optim.Adam(model.parameters(), lr=lr)
+    elif optimizer=='sgd':
+        optimizer_fn = torch.optim.SGD(model.parameters(), lr=lr)
+
     test_losses = []
     early_stop_counter = 0
     print("Training Variational Autoencoder Model...")
 
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
-        train(train_dataloader, model, optimizer)
+        train(train_dataloader, model, optimizer_fn,loss_fn)
 
-        test_loss = test(test_dataloader, model)
+        test_loss = test(test_dataloader, model,loss_fn)
         test_losses.append(test_loss)
         early_stop_counter +=1
         
@@ -107,19 +113,13 @@ def fit(model,
     
 
 def train_model(conf,
-                   epochs: int = 5,
                    df: pd.DataFrame = data.ml100k_dataset(),
-                   save_dir: str = "",
-                   model_name: str = "best_model.bin",
-                   save_onnx: bool = True,
-                   patience:int = 10):
+                   ):
     
-    model_save_path = save_dir + model_name
+    model_save_path = conf["model_save_path"] + conf["model_save_name"]
     device = (
     "cuda"
     if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
     else "cpu"
     )
     print(f"Using {device} device")
@@ -138,9 +138,11 @@ def train_model(conf,
     best_model = fit(model, 
                      train_dataloader, 
                      test_dataloader,
-                     epochs=epochs,
+                     epochs=conf["epochs"],
                      model_save_path=model_save_path,
-                     patience=patience)
+                     patience=conf["patience"],
+                     lr=conf["lr"],
+                     optimizer=conf["optimizer"])
     
     # if save_onnx:
     #     best_model.eval()
@@ -163,5 +165,5 @@ if __name__=="__main__":
 
     with open('config/vae.json', 'r') as f:
         conf = json.load(f)
-    train_model(conf,epochs=20)
-    print(predict_from_bin("best_model.bin", conf))
+    train_model(conf)
+    #print(predict_from_bin("best_model.bin", conf,))

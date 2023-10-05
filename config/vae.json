@@ -1,4 +1,13 @@
-{"encoder": [50, 60, 20], 
-"latent_dims": 16,
+{"encoder": [100, 20, 12], 
+"latent_dims": 5,
 "activation": "relu",
-"features": ["user_id", "age", "gender"]}
+"features": ["user_id", "age", "gender"],
+
+"lr":1e-2,
+"optimizer":"adam",
+
+"epochs":400,
+"model_save_name":"best_model.bin",
+"model_save_path":"",
+"patience": 15}
+
